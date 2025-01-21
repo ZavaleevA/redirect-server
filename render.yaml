@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: redirect-server
+    env: docker
+    region: oregon # Выберите регион, который вам удобен
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    plan: free # Используем бесплатный тариф
