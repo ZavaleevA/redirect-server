@@ -69,7 +69,7 @@ if (isset($_GET['url'])) {
     // Декодируем JWT-ключ
     try {
         $jwt = urldecode($_GET['url']);
-        $decoded = JWT::decode($jwt, $secretKey, ['HS256']);
+        $decoded = JWT::decode($jwt, $secretKey, 'HS256');
         $targetUrl = $decoded->url; // Извлекаем URL из декодированного JWT
 
         // Перенаправление пользователя
