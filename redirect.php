@@ -1,4 +1,11 @@
 <?php
+require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
+
+use \Firebase\JWT\JWT;
+
+// Секретный ключ для подписи и проверки JWT
+$secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
+
 // Разрешенные IP-адреса (пример для демонстрации)
 $allowedIps = ['87.244.131.22', '54.86.50.139', '456.456.456.456'];
 
@@ -59,13 +66,21 @@ file_put_contents($rateLimitFile, json_encode($rateLimitData));
 
 // Проверка наличия параметра URL
 if (isset($_GET['url'])) {
-    $targetUrl = urldecode($_GET['url']);
-    if (filter_var($targetUrl, FILTER_VALIDATE_URL)) {
+    // Декодируем JWT-ключ
+    try {
+        $jwt = urldecode($_GET['url']);
+        $decoded = JWT::decode($jwt, $secretKey, ['HS256']);
+        $targetUrl = $decoded->url; // Извлекаем URL из декодированного JWT
+
         // Перенаправление пользователя
-        header("Location: $targetUrl");
-        exit();
-    } else {
-        echo "Invalid URL provided.";
+        if (filter_var($targetUrl, FILTER_VALIDATE_URL)) {
+            header("Location: $targetUrl");
+            exit();
+        } else {
+            echo "Invalid URL provided.";
+        }
+    } catch (Exception $e) {
+        echo "Invalid or expired token.";
     }
 } else {
     echo "No URL provided.";
