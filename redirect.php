@@ -30,9 +30,48 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 
 // Проверка легитимности IP через API
 if (!isLegitimateIp($userIp)) {
+    $logFile = __DIR__ . '/vpn_attempts.log';
+    file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
     // Дополнительная проверка или отказ в доступе
-    echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
-    exit();
+    // Показываем страницу с reCAPTCHA только для VPN/прокси пользователей
+    echo '
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Identity</title>
+        <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    </head>
+    <body>
+        <h1>Verify Your Identity</h1>
+        <p>Your connection appears to come from a VPN or proxy. Please complete the reCAPTCHA below to proceed.</p>
+        <form action="" method="POST">
+            <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD"></div>
+            <br>
+            <input type="submit" value="Verify">
+        </form>
+    </body>
+    </html>';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
+        $recaptchaResponse = $_POST['g-recaptcha-response'];
+
+        // Проверка ответа reCAPTCHA через Google API
+        $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
+        $result = json_decode($response, true);
+
+        if ($result['success']) {
+            echo "Verification successful. Redirecting...";
+            header("Location: $targetUrl");
+            exit();
+        } else {
+            echo "Verification failed. Please try again.";
+            exit();
+        }
+    }
+    // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
+    // exit();
 }
 
 // Секретный ключ для подписи и проверки JWT
