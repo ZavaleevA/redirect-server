@@ -1,14 +1,14 @@
 <?php
 // Разрешенные IP-адреса (пример для демонстрации)
 $allowedIps = ['87.244.131.22', '456.456.456.456'];
-echo "Your IP: $userIp"; die();
+
 // Получение реального IP-адреса пользователя
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
 } else {
     $userIp = $_SERVER['REMOTE_ADDR'];
 }
-
+echo "Your IP: $userIp"; die();
 // Проверка IP-адреса
 if (!in_array($userIp, $allowedIps)) {
     http_response_code(403);
