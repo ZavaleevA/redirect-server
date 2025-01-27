@@ -4,6 +4,37 @@ require 'vendor/autoload.php'; // Подключаем библиотеку дл
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
 
+// Проверка через IPQualityScore API
+function isLegitimateIp($ip) {
+    $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
+    $url = "https://ipqualityscore.com/api/json/ip/$apiKey/$ip";
+
+    $response = file_get_contents($url);
+    if ($response === false) {
+        return false; // Ошибка API
+    }
+
+    $data = json_decode($response, true);
+    if ($data['success'] && $data['fraud_score'] < 75 && !$data['proxy']) {
+        return true; // Легитимный IP
+    }
+    return false; // Подозрительный или прокси IP
+}
+
+// Получение реального IP-адреса пользователя
+if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
+} else {
+    $userIp = $_SERVER['REMOTE_ADDR'];
+}
+
+// Проверка легитимности IP через API
+if (!isLegitimateIp($userIp)) {
+    // Дополнительная проверка или отказ в доступе
+    echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
+    exit();
+}
+
 // Секретный ключ для подписи и проверки JWT
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
 
