@@ -36,7 +36,7 @@ if (!isLegitimateIp($userIp)) {
     $logFile = __DIR__ . '/vpn_attempts.log';
     file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
 
-    // Отображение страницы с reCAPTCHA
+    // Проверка reCAPTCHA
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
         $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
@@ -46,12 +46,10 @@ if (!isLegitimateIp($userIp)) {
         $result = json_decode($response, true);
 
         if ($result['success']) {
-            // Верификация пройдена
-            echo "Verification successful. Redirecting...";
-            header("Refresh: 2; url=".$_SERVER['REQUEST_URI']);
+            // Перезагрузка страницы для продолжения работы
+            header("Refresh: 0; url=".$_SERVER['REQUEST_URI']);
             exit();
         } else {
-            // Ошибка верификации
             echo "Verification failed. Please try again.";
             exit();
         }
@@ -71,13 +69,18 @@ if (!isLegitimateIp($userIp)) {
         <h1>Verify Your Identity</h1>
         <p>Your connection appears to come from a VPN or proxy. Please complete the reCAPTCHA below to proceed.</p>
         <form action="" method="POST">
-            <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD"></div>
+            <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD" data-callback="enableButton"></div>
             <br>
-            <input type="submit" value="Verify">
+            <input type="submit" value="Verify" id="verifyButton" disabled>
         </form>
+        <script>
+            function enableButton() {
+                document.getElementById("verifyButton").disabled = false;
+            }
+        </script>
     </body>
     </html>';
-    exit(); // Прерываем дальнейшее выполнение кода
+    exit();
     // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
     // exit();
 }
