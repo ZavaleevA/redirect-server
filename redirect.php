@@ -30,8 +30,12 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 
 // Проверка легитимности IP через API
 if (!isLegitimateIp($userIp)) {
+    // Получение User-Agent пользователя
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Устанавливаем значение по умолчанию, если User-Agent отсутствует
+
     $logFile = __DIR__ . '/vpn_attempts.log';
     file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
+
     // Дополнительная проверка или отказ в доступе
     // Показываем страницу с reCAPTCHA только для VPN/прокси пользователей
     echo '
@@ -78,7 +82,7 @@ if (!isLegitimateIp($userIp)) {
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
 
 // Разрешенные IP-адреса (пример для демонстрации)
-$allowedIps = ['87.244.131.22', '54.86.50.139', '456.456.456.456'];
+$allowedIps = ['87.244.131.22', '54.86.50.139', '135.148.100.143', '456.456.456.456'];
 
 // Получение реального IP-адреса пользователя
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
