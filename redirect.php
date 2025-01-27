@@ -30,10 +30,18 @@ $rateLimitCount = 10; // Максимальное количество запр�
 // Чтение лога запросов
 $rateLimitData = file_exists($rateLimitFile) ? json_decode(file_get_contents($rateLimitFile), true) : [];
 
-// Удаление старых записей
-$rateLimitData = array_filter($rateLimitData, function ($timestamp) use ($rateLimitTime) {
-    return $timestamp > time() - $rateLimitTime;
-});
+// Удаление старых записей для всех IP-адресов
+foreach ($rateLimitData as $ip => &$timestamps) {
+    $timestamps = array_filter($timestamps, function ($timestamp) use ($rateLimitTime) {
+        return $timestamp > time() - $rateLimitTime;
+    });
+
+    // Удаляем IP, если массив временных меток пуст
+    if (empty($timestamps)) {
+        unset($rateLimitData[$ip]);
+    }
+}
+unset($timestamps);
 
 // Проверка частоты запросов для текущего IP
 if (!isset($rateLimitData[$userIp])) {
