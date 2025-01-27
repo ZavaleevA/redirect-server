@@ -31,7 +31,7 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 }
 
 // Проверка легитимности IP через API
-iif (!isset($_SESSION['recaptcha_verified'])) {
+if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
 
