@@ -2,7 +2,7 @@
 require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
 
 use \Firebase\JWT\JWT;
-use \Firebase\JWT\Key
+use \Firebase\JWT\Key;
 
 // Секретный ключ для подписи и проверки JWT
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
