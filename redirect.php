@@ -2,6 +2,7 @@
 require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
 
 use \Firebase\JWT\JWT;
+use \Firebase\JWT\Key
 
 // Секретный ключ для подписи и проверки JWT
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
@@ -69,7 +70,7 @@ if (isset($_GET['url'])) {
     // Декодируем JWT-ключ
     try {
         $jwt = urldecode($_GET['url']);
-        $decoded = JWT::decode($jwt, $secretKey, 'HS256');
+        $decoded = JWT::decode($jwt, new Key($secretKey, 'HS256'));
         $targetUrl = $decoded->url; // Извлекаем URL из декодированного JWT
 
         // Перенаправление пользователя
