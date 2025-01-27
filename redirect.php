@@ -17,10 +17,37 @@ if (!in_array($userIp, $allowedIps)) {
 
 // Проверка User-Agent на соответствие ботам
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-if (preg_match('/bot|crawl|slurp|spider/i', $userAgent)) {
+if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|postman|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
     http_response_code(403);
     die("Bots are not allowed");
 }
+
+// Ограничение частоты обращений
+$rateLimitFile = __DIR__ . '/rate_limit.log'; // Файл для хранения временных меток запросов
+$rateLimitTime = 60; // Время (в секундах), за которое разрешено определенное количество запросов
+$rateLimitCount = 10; // Максимальное количество запросов за $rateLimitTime
+
+// Чтение лога запросов
+$rateLimitData = file_exists($rateLimitFile) ? json_decode(file_get_contents($rateLimitFile), true) : [];
+
+// Удаление старых записей
+$rateLimitData = array_filter($rateLimitData, function ($timestamp) use ($rateLimitTime) {
+    return $timestamp > time() - $rateLimitTime;
+});
+
+// Проверка частоты запросов для текущего IP
+if (!isset($rateLimitData[$userIp])) {
+    $rateLimitData[$userIp] = [];
+}
+
+if (count($rateLimitData[$userIp]) >= $rateLimitCount) {
+    http_response_code(429); // Too Many Requests
+    die("Rate limit exceeded. Please try again later.");
+}
+
+// Запись текущего запроса
+$rateLimitData[$userIp][] = time();
+file_put_contents($rateLimitFile, json_encode($rateLimitData));
 
 // Проверка наличия параметра URL
 if (isset($_GET['url'])) {
