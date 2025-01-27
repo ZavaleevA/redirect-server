@@ -30,14 +30,34 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 
 // Проверка легитимности IP через API
 if (!isLegitimateIp($userIp)) {
-    // Получение User-Agent пользователя
-    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Устанавливаем значение по умолчанию, если User-Agent отсутствует
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
 
+    // Логирование подозрительных соединений
     $logFile = __DIR__ . '/vpn_attempts.log';
     file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
 
-    // Дополнительная проверка или отказ в доступе
-    // Показываем страницу с reCAPTCHA только для VPN/прокси пользователей
+    // Отображение страницы с reCAPTCHA
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
+        $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
+
+        // Проверка ответа reCAPTCHA через Google API
+        $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
+        $result = json_decode($response, true);
+
+        if ($result['success']) {
+            // Верификация пройдена
+            echo "Verification successful. Redirecting...";
+            header("Refresh: 2; url=".$_SERVER['REQUEST_URI']);
+            exit();
+        } else {
+            // Ошибка верификации
+            echo "Verification failed. Please try again.";
+            exit();
+        }
+    }
+
+    // Отображение формы с reCAPTCHA
     echo '
     <!DOCTYPE html>
     <html lang="en">
@@ -57,23 +77,7 @@ if (!isLegitimateIp($userIp)) {
         </form>
     </body>
     </html>';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
-        $recaptchaResponse = $_POST['g-recaptcha-response'];
-
-        // Проверка ответа reCAPTCHA через Google API
-        $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
-        $result = json_decode($response, true);
-
-        if ($result['success']) {
-            echo "Verification successful. Redirecting...";
-            header("Location: $targetUrl");
-            exit();
-        } else {
-            echo "Verification failed. Please try again.";
-            exit();
-        }
-    }
+    exit(); // Прерываем дальнейшее выполнение кода
     // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
     // exit();
 }
