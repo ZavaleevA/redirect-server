@@ -8,7 +8,7 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 } else {
     $userIp = $_SERVER['REMOTE_ADDR'];
 }
-echo "Your IP: $userIp"; die();
+
 // Проверка IP-адреса
 if (!in_array($userIp, $allowedIps)) {
     http_response_code(403);
