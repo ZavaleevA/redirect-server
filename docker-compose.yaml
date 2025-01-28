@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80" # Пробрасываем порт 80 контейнера на 8080 хоста
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: redirect_db
+      DB_USER: testsendgrid1
+      DB_PASSWORD: 123qweasdzxc
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    ports:
+      - "3306:3306" # Пробрасываем порт для доступа к базе данных
+    environment:
+      MYSQL_DATABASE: redirect_db
+      MYSQL_USER: testsendgrid1
+      MYSQL_PASSWORD: 123qweasdzxc
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - redirect_network
+
+networks:
+  redirect_network:
+
+volumes:
+  db_data:

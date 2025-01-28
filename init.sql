@@ -1,0 +1,3 @@
+CREATE USER 'testsendgrid1'@'87.244.131.22' IDENTIFIED BY '123qweasdzxc';
+GRANT ALL PRIVILEGES ON redirect_db.* TO 'testsendgrid1'@'87.244.131.22';
+FLUSH PRIVILEGES;
