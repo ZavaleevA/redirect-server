@@ -176,8 +176,7 @@ if (isset($_GET['url'])) {
         $jwt = urldecode($_GET['url']);
         $decoded = JWT::decode($jwt, new Key($secretKey, 'HS256'));
         $uniqueId = $decoded->unique_id; // Извлекаем unique_id из декодированного JWT
-        echo "1";
-        exit();
+
         // Проверяем наличие записи в базе данных по уникальному ID
         $query = "SELECT * FROM temporary_links WHERE unique_id = :unique_id";
         $stmt = $pdo->prepare($query);
@@ -195,8 +194,7 @@ if (isset($_GET['url'])) {
                 echo "The link has expired.";
                 exit();
             }
-        echo 'uniqueId = ' . $uniqueId . ', url = ' . $url . ', expiresAt = ' . $expiresAt . 'Time = ' . $currentTime;
-        exit();
+
         // Перенаправление пользователя
             if (filter_var($url, FILTER_VALIDATE_URL)) {
                 header("Location: $url");
