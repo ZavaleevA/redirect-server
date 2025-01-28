@@ -30,12 +30,19 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $userIp = $_SERVER['REMOTE_ADDR'];
 }
 
+// Проверка изменения IP-адреса
+if (!isset($_SESSION['last_ip']) || $_SESSION['last_ip'] !== $userIp) {
+    // IP изменился или не установлен
+    $_SESSION['last_ip'] = $userIp; // Обновляем IP в сессии
+    unset($_SESSION['recaptcha_verified']); // Сбрасываем статус капчи
+}
+
 // Проверка легитимности IP через API
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
-        // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
 
-        // // Логирование подозрительных соединений (по желанию)
+        // Логирование подозрительных соединений (по желанию)
+        // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
         // $logFile = __DIR__ . '/vpn_attempts.log';
         // file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
 
