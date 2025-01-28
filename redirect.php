@@ -187,12 +187,12 @@ if (isset($_GET['url'])) {
         if ($linkData) {
             $url = $linkData['url'];
             $expiresAt = strtotime($linkData['expires_at']);
-            $currentTime = date('Y-m-d H:i:s');
+            $currentTime = time();
 
             // Проверяем, не истек ли срок действия ссылки
             if ($currentTime > $expiresAt) {
                 echo "The link has expired.";
-                exit();
+                //exit();
             }
         echo 'uniqueId = ' . $uniqueId . ', url = ' . $url . ', expiresAt = ' . $expiresAt . 'Time = ' . $currentTime;
         exit();
