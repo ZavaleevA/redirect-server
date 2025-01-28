@@ -10,7 +10,7 @@ use \Firebase\JWT\Key;
 function isLegitimateIp($ip) {
     $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
     $url = "https://www.ipqualityscore.com/api/json/ip/$apiKey/$ip";
-    echo $apiKey . ' ' . $ip
+    echo $apiKey . ' ' . $ip;
     exit();
     $response = file_get_contents($url);
     if ($response === false) {
