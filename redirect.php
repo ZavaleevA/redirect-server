@@ -146,8 +146,16 @@ function sendAlert($ip, $userAgent) {
         "
     );
 
+    $encoded_key = 'QZRHF1PEJLN/wdssfKHC9zo6aUM5YTlsM2JlZUU3OUZvQVVFWURzUGI0Q1pYaGxQeVpFenJOak53eWlsMDVlUVhqQnRpSkIxTzJOT0o2SU9EaEZxaHF3OEtJclBPek45TUwzdkJkOEpkRkdUR3BEMld4Q25CQVhGUVU4cWs9';
+    $encryption_key = 'l9Ow0pqMa83Bg0La2StXK5va6s6dkn7';
+    $cipher = "AES-256-CBC";
+
+    // Расшифровываем ключ
+    list($iv, $encrypted_key) = explode('::', base64_decode($encoded_key), 2);
+    $plaintext_key = openssl_decrypt($encrypted_key, $cipher, $encryption_key, 0, $iv);
+
     // Используем SendGrid API для отправки письма
-    $sendgrid = new \SendGrid('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'); // Укажите ваш API-ключ SendGrid
+    $sendgrid = new \SendGrid($plaintext_key); // Укажите ваш API-ключ SendGrid
     try {
         $response = $sendgrid->send($email);
     } catch (Exception $e) {
