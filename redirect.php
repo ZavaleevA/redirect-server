@@ -10,7 +10,7 @@ use \Firebase\JWT\Key;
 function isLegitimateIp($ip) {
     $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
     $url = "https://www.ipqualityscore.com/api/json/ip/$apiKey/$ip";
-    
+
     $response = file_get_contents($url);
     if ($response === false) {
         return false; // Ошибка API
@@ -33,11 +33,11 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 // Проверка легитимности IP через API
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
+        // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
 
         // Логирование подозрительных соединений
-        $logFile = __DIR__ . '/vpn_attempts.log';
-        file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
+        // $logFile = __DIR__ . '/vpn_attempts.log';
+        // file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
 
         // Проверка reCAPTCHA
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
