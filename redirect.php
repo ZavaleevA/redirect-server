@@ -187,14 +187,15 @@ if (isset($_GET['url'])) {
         if ($linkData) {
             $url = $linkData['url'];
             $expiresAt = strtotime($linkData['expires_at']);
-            $currentTime = time();
+            $currentTime = date('Y-m-d H:i:s');
 
             // Проверяем, не истек ли срок действия ссылки
             if ($currentTime > $expiresAt) {
                 echo "The link has expired.";
                 exit();
             }
-
+        echo 'uniqueId = ' . $uniqueId . ', url = ' . $url . ', expiresAt = ' . $expiresAt . 'Time = ' . $currentTime;
+        exit();
         // Перенаправление пользователя
             if (filter_var($url, FILTER_VALIDATE_URL)) {
                 header("Location: $url");
