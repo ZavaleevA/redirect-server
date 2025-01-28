@@ -155,6 +155,13 @@ function sendAlert($ip, $userAgent) {
     }
 }
 
+// Проверка User-Agent на соответствие ботам
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
+    http_response_code(403);
+    die("Bots are not allowed");
+}
+
 // Получение реального IP-адреса пользователя
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
@@ -240,13 +247,6 @@ if (!in_array($userIp, $allowedIps)) {
     die("Access denied");
 } else {
     logRequest($userIp, $userAgent, 'Access granted');
-}
-
-// Проверка User-Agent на соответствие ботам
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
-    http_response_code(403);
-    die("Bots are not allowed");
 }
 
 // Ограничение частоты обращений
