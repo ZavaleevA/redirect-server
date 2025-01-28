@@ -1,5 +1,5 @@
 <?php
-session_start(); // Начало сессии для хранения состояния
+// session_start(); // Начало сессии для хранения состояния
 
 require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
 
@@ -31,7 +31,7 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 }
 
 // Проверка легитимности IP через API
-if (!isset($_SESSION['recaptcha_verified'])) {
+// if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
 
@@ -87,7 +87,7 @@ if (!isset($_SESSION['recaptcha_verified'])) {
     // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
     // exit();
     }
-}
+// }
 
 // Секретный ключ для подписи и проверки JWT
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
