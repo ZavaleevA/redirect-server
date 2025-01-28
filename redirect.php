@@ -1,5 +1,5 @@
 <?php
-session_start(); // Начало сессии для хранения состояния
+//session_start(); // Начало сессии для хранения состояния
 
 require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
 
@@ -31,62 +31,10 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 }
 
 // Проверка легитимности IP через API
-if (!isset($_SESSION['recaptcha_verified'])) {
-    if (!isLegitimateIp($userIp)) {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
-
-        // Логирование подозрительных соединений
-        $logFile = __DIR__ . '/vpn_attempts.log';
-        file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
-
-        // Проверка reCAPTCHA
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
-            $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
-
-            // Проверка ответа reCAPTCHA через Google API
-            $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
-            $result = json_decode($response, true);
-
-            if ($result['success']) {
-                $_SESSION['recaptcha_verified'] = true; // Устанавливаем флаг в сессии
-                header("Location: " . $_SERVER['REQUEST_URI']);
-                exit();
-            } else {
-                echo "Verification failed. Please try again.";
-                exit();
-            }
-        }
-
-        // Отображение формы с reCAPTCHA
-        echo '
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verify Your Identity</title>
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-        </head>
-        <body>
-            <h1>Verify Your Identity</h1>
-            <p>Your connection appears to come from a VPN or proxy. Please complete the reCAPTCHA below to proceed.</p>
-            <form action="" method="POST">
-                <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD" data-callback="enableButton"></div>
-                <br>
-                <input type="submit" value="Verify" id="verifyButton" disabled>
-            </form>
-            <script>
-                function enableButton() {
-                    document.getElementById("verifyButton").disabled = false;
-                }
-            </script>
-        </body>
-        </html>';
-        exit();
-    }
-    // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
-    // exit();
+if (!isLegitimateIp($userIp)) {
+    // Дополнительная проверка или отказ в доступе
+    echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
+    exit();
 }
 
 // Секретный ключ для подписи и проверки JWT
