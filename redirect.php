@@ -1,6 +1,4 @@
 <?php
-session_start(); // Начало сессии для хранения состояния
-
 require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
 
 use \Firebase\JWT\JWT;
@@ -9,9 +7,8 @@ use \Firebase\JWT\Key;
 // Проверка через IPQualityScore API
 function isLegitimateIp($ip) {
     $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
-    $url = "https://www.ipqualityscore.com/api/json/ip/$apiKey/$ip";
-    echo $apiKey . ' ' . $ip;
-    exit();
+    $url = "https://ipqualityscore.com/api/json/ip/$apiKey/$ip";
+
     $response = file_get_contents($url);
     if ($response === false) {
         return false; // Ошибка API
@@ -32,69 +29,24 @@ if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 }
 
 // Проверка легитимности IP через API
-if (!isset($_SESSION['recaptcha_verified'])) {
-    if (!isLegitimateIp($userIp)) {
-        // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
-
-        // Логирование подозрительных соединений
-        // $logFile = __DIR__ . '/vpn_attempts.log';
-        // file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
-
-        // Проверка reCAPTCHA
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
-            $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
-
-            // Проверка ответа reCAPTCHA через Google API
-            $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
-            $result = json_decode($response, true);
-
-            if ($result['success']) {
-                $_SESSION['recaptcha_verified'] = true; // Устанавливаем флаг в сессии
-                header("Location: " . $_SERVER['REQUEST_URI']);
-                exit();
-            } else {
-                echo "Verification failed. Please try again.";
-                exit();
-            }
-        }
-
-        // Отображение формы с reCAPTCHA
-        echo '
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verify Your Identity</title>
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-        </head>
-        <body>
-            <h1>Verify Your Identity</h1>
-            <p>Your connection appears to come from a VPN or proxy. Please complete the reCAPTCHA below to proceed.</p>
-            <form action="" method="POST">
-                <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD" data-callback="enableButton"></div>
-                <br>
-                <input type="submit" value="Verify" id="verifyButton" disabled>
-            </form>
-            <script>
-                function enableButton() {
-                    document.getElementById("verifyButton").disabled = false;
-                }
-            </script>
-        </body>
-        </html>';
-        exit();
-    // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
-    // exit();
-    }
+if (!isLegitimateIp($userIp)) {
+    // Дополнительная проверка или отказ в доступе
+    echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
+    exit();
 }
 
 // Секретный ключ для подписи и проверки JWT
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
 
 // Разрешенные IP-адреса (пример для демонстрации)
-$allowedIps = ['87.244.131.22', '54.86.50.139', '135.148.55.133', '147.135.70.175', '51.159.180.169', '51.159.135.175', '456.456.456.456'];
+$allowedIps = ['87.244.131.22', '54.86.50.139', '456.456.456.456'];
+
+// Получение реального IP-адреса пользователя
+if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
+} else {
+    $userIp = $_SERVER['REMOTE_ADDR'];
+}
 
 // Проверка IP-адреса
 if (!in_array($userIp, $allowedIps)) {
