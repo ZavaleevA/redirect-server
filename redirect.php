@@ -58,7 +58,7 @@ function logRequest($ip, $userAgent, $status) {
 }
 
 // Функция для отправки алертов при подозрительных активностях
-function sendAlert($ip, $userAgent) {
+function sendAlert($ip, $userAgent, $cause) {
     $email = new Mail(); 
     $email->setFrom("zavaleev.sbase@gmail.com", "Security Alert System");
     $email->setSubject("🚨 Suspicious Activity Detected");
@@ -130,6 +130,7 @@ function sendAlert($ip, $userAgent) {
                     <p><strong>Attention Admin,</strong></p>
                     <p>Suspicious activity has been detected on your system. Below are the details of the activity:</p>
                     <div class='details'>
+                        <p><strong>Cause:</strong> $cause</p>
                         <p><strong>IP Address:</strong> $ip</p>
                         <p><strong>User-Agent:</strong> $userAgent</p>
                         <p><strong>Time:</strong> " . date('Y-m-d H:i:s') . "</p>
@@ -192,7 +193,7 @@ if (!isset($_SESSION['recaptcha_verified'])) {
         // Проверка reCAPTCHA
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             logRequest($userIp, $userAgent, 'Suspicious IP');
-            sendAlert($userIp, $userAgent); // Отправка уведомления
+            sendAlert($userIp, $userAgent, 'Suspicious IP'); // Отправка уведомления
             $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
             $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
 
@@ -287,7 +288,7 @@ if (!isset($rateLimitData[$userIp])) {
 
 if (count($rateLimitData[$userIp]) >= $rateLimitCount) {
     logRequest($userIp, $userAgent, 'Rate limit exceeded');
-    sendAlert($userIp, $userAgent); // Отправка уведомления
+    sendAlert($userIp, $userAgent, 'Rate limit exceeded'); // Отправка уведомления
     http_response_code(429); // Too Many Requests
     die("Rate limit exceeded. Please try again later.");
 }
