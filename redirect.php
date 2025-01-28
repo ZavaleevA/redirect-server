@@ -6,6 +6,25 @@ require 'vendor/autoload.php'; // Подключаем библиотеку дл
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
 
+// Данные для подключения к базе данных
+$host = 'autorack.proxy.rlwy.net';
+$port = 24942;
+$username = 'root';
+$password = 'qoYVjZFmyggcSrdOBuIPXaxMZghjrdjA';
+$dbname = 'railway';
+
+// Создание подключения
+$dsn = "mysql:host=$host;port=$port;dbname=$dbname";
+try {
+    // Создание объекта PDO для подключения
+    $pdo = new PDO($dsn, $username, $password);
+    // Устанавливаем режим ошибок
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo "Failed to connect to the database: " . $e->getMessage();
+    exit();
+}
+
 // Проверка через IPQualityScore API
 function isLegitimateIp($ip) {
     $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
@@ -41,7 +60,7 @@ if (!isset($_SESSION['last_ip']) || $_SESSION['last_ip'] !== $userIp) {
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
 
-        // Логирование подозрительных соединений (по желанию)
+        // Логирование подозрительных соединений (по желанию, можно настроить в БД)
         // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
         // $logFile = __DIR__ . '/vpn_attempts.log';
         // file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
@@ -156,17 +175,39 @@ if (isset($_GET['url'])) {
     try {
         $jwt = urldecode($_GET['url']);
         $decoded = JWT::decode($jwt, new Key($secretKey, 'HS256'));
-        $targetUrl = $decoded->url; // Извлекаем URL из декодированного JWT
+        $uniqueId = $decoded->unique_id; // Извлекаем unique_id из декодированного JWT
+
+        // Проверяем наличие записи в базе данных по уникальному ID
+        $query = "SELECT * FROM temporary_links WHERE unique_id = :unique_id";
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(':unique_id', $uniqueId);
+        $stmt->execute();
+        $linkData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($linkData) {
+            $url = $linkData['url'];
+            $expiresAt = strtotime($linkData['expires_at']);
+            $currentTime = time();
+
+            // Проверяем, не истек ли срок действия ссылки
+            if ($currentTime > $expiresAt) {
+                echo "The link has expired.";
+                exit();
+            }
 
         // Перенаправление пользователя
-        if (filter_var($targetUrl, FILTER_VALIDATE_URL)) {
-            header("Location: $targetUrl");
-            exit();
-        } else {
-            echo "Invalid URL provided.";
+            if (filter_var($url, FILTER_VALIDATE_URL)) {
+                header("Location: $url");
+                exit();
+            } else {
+                echo "Invalid URL provided.";
+                exit();
+            }
         }
+
     } catch (Exception $e) {
         echo "Invalid or expired token.";
+        exit();
     }
 } else {
     echo "No URL provided.";
