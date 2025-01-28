@@ -5,6 +5,7 @@ require 'vendor/autoload.php'; // Подключаем библиотеку дл
 
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
+use SendGrid\Mail\Mail;
 
 // Данные для подключения к базе данных
 $host = 'autorack.proxy.rlwy.net';
@@ -42,6 +43,118 @@ function isLegitimateIp($ip) {
     return false; // Подозрительный или прокси IP
 }
 
+// Функция логирования обращений
+function logRequest($ip, $userAgent, $status) {
+    $logFile = __DIR__ . '/requests.log';
+    $logEntry = sprintf(
+        "[%s] IP: %s, User-Agent: %s, Status: %s%s",
+        date('Y-m-d H:i:s'),
+        $ip,
+        $userAgent,
+        $status,
+        PHP_EOL
+    );
+    file_put_contents($logFile, $logEntry, FILE_APPEND);
+}
+
+// Функция для отправки алертов при подозрительных активностях
+function sendAlert($ip, $userAgent) {
+    $email = new Mail(); 
+    $email->setFrom("zavaleev.sbase@gmail.com", "Security Alert System");
+    $email->setSubject("🚨 Suspicious Activity Detected");
+    $email->addTo("zavaleev.sbase@gmail.com", "Admin");
+    $email->addContent(
+        "text/html",
+        "
+        <!DOCTYPE html>
+        <html lang='en'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Suspicious Activity Alert</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f8f9fa;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 20px auto;
+                    background: #fff;
+                    border: 1px solid #ddd;
+                    border-radius: 10px;
+                    padding: 20px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                }
+                .header {
+                    text-align: center;
+                    padding: 15px 0;
+                    background-color: #dc3545;
+                    color: white;
+                    border-radius: 10px 10px 0 0;
+                    font-size: 24px;
+                }
+                .content {
+                    padding: 20px;
+                }
+                .details {
+                    background-color: #f1f1f1;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin: 10px 0;
+                }
+                .details p {
+                    margin: 5px 0;
+                }
+                .footer {
+                    text-align: center;
+                    font-size: 12px;
+                    color: #555;
+                    margin-top: 20px;
+                }
+                a {
+                    color: #dc3545;
+                    text-decoration: none;
+                }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    Suspicious Activity Alert 🚨
+                </div>
+                <div class='content'>
+                    <p><strong>Attention Admin,</strong></p>
+                    <p>Suspicious activity has been detected on your system. Below are the details of the activity:</p>
+                    <div class='details'>
+                        <p><strong>IP Address:</strong> $ip</p>
+                        <p><strong>User-Agent:</strong> $userAgent</p>
+                        <p><strong>Time:</strong> " . date('Y-m-d H:i:s') . "</p>
+                    </div>
+                    <p>Please investigate this activity immediately and take the necessary actions.</p>
+                    <p>For more details, log into the admin panel or check the logs.</p>
+                </div>
+                <div class='footer'>
+                    <p>&copy; 2025 Security Alert System. All Rights Reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        "
+    );
+
+    // Используем SendGrid API для отправки письма
+    $sendgrid = new \SendGrid('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'); // Укажите ваш API-ключ SendGrid
+    try {
+        $response = $sendgrid->send($email);
+    } catch (Exception $e) {
+        echo 'SendGrid error: ' . $e->getMessage();
+    }
+}
+
 // Получение реального IP-адреса пользователя
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
@@ -59,12 +172,8 @@ if (!isset($_SESSION['last_ip']) || $_SESSION['last_ip'] !== $userIp) {
 // Проверка легитимности IP через API
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
-
-        // Логирование подозрительных соединений (по желанию, можно настроить в БД)
-        // $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'; // Получение User-Agent
-        // $logFile = __DIR__ . '/vpn_attempts.log';
-        // file_put_contents($logFile, "IP: $userIp, User-Agent: $userAgent, Time: " . date('Y-m-d H:i:s') . PHP_EOL, FILE_APPEND);
-
+        logRequest($userIp, $userAgent, 'Suspicious IP');
+        sendAlert($userIp, $userAgent); // Отправка уведомления
         // Проверка reCAPTCHA
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
@@ -75,13 +184,16 @@ if (!isset($_SESSION['recaptcha_verified'])) {
             $result = json_decode($response, true);
 
             if ($result['success']) {
+                logRequest($userIp, $userAgent, 'reCAPTCHA passed');
                 $_SESSION['recaptcha_verified'] = true; // Устанавливаем флаг в сессии
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             } else {
+                logRequest($userIp, $userAgent, 'reCAPTCHA failed');
                 echo "Verification failed. Please try again.";
                 exit();
             }
+
         }
 
         // Отображение формы с reCAPTCHA
@@ -123,8 +235,11 @@ $allowedIps = ['87.244.131.22', '54.86.50.139', '135.148.55.133', '147.135.70.17
 
 // Проверка IP-адреса
 if (!in_array($userIp, $allowedIps)) {
+    logRequest($userIp, $userAgent, 'Access denied');
     http_response_code(403);
     die("Access denied");
+} else {
+    logRequest($userIp, $userAgent, 'Access granted');
 }
 
 // Проверка User-Agent на соответствие ботам
@@ -161,6 +276,8 @@ if (!isset($rateLimitData[$userIp])) {
 }
 
 if (count($rateLimitData[$userIp]) >= $rateLimitCount) {
+    logRequest($userIp, $userAgent, 'Rate limit exceeded');
+    sendAlert($userIp, $userAgent); // Отправка уведомления
     http_response_code(429); // Too Many Requests
     die("Rate limit exceeded. Please try again later.");
 }
@@ -191,6 +308,7 @@ if (isset($_GET['url'])) {
 
             // Проверяем, не истек ли срок действия ссылки
             if ($currentTime > $expiresAt) {
+                logRequest($userIp, $userAgent, 'The link has expired');
                 echo "The link has expired.";
                 exit();
             }
@@ -200,12 +318,13 @@ if (isset($_GET['url'])) {
                 header("Location: $url");
                 exit();
             } else {
+                logRequest($userIp, $userAgent, 'Invalid URL provided');
                 echo "Invalid URL provided.";
                 exit();
             }
         }
-
     } catch (Exception $e) {
+        logRequest($userIp, $userAgent, 'Invalid or expired token');
         echo "Invalid or expired token.";
         exit();
     }
