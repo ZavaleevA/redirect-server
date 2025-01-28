@@ -93,14 +93,7 @@ if (!isset($_SESSION['recaptcha_verified'])) {
 $secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
 
 // Разрешенные IP-адреса (пример для демонстрации)
-$allowedIps = ['87.244.131.22', '54.86.50.139', '51.159.180.169', '51.159.135.175', '456.456.456.456'];
-
-// Получение реального IP-адреса пользователя
-if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
-} else {
-    $userIp = $_SERVER['REMOTE_ADDR'];
-}
+$allowedIps = ['87.244.131.22', '54.86.50.139', '135.148.55.133', '147.135.70.175', '51.159.180.169', '51.159.135.175', '456.456.456.456'];
 
 // Проверка IP-адреса
 if (!in_array($userIp, $allowedIps)) {
