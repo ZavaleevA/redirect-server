@@ -155,18 +155,19 @@ function sendAlert($ip, $userAgent) {
     }
 }
 
-// Проверка User-Agent на соответствие ботам
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
-    http_response_code(403);
-    die("Bots are not allowed");
-}
-
 // Получение реального IP-адреса пользователя
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
     $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
 } else {
     $userIp = $_SERVER['REMOTE_ADDR'];
+}
+
+// Проверка User-Agent на соответствие ботам
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
+    logRequest($userIp, $userAgent, 'Bot');
+    http_response_code(403);
+    die("Bots are not allowed");
 }
 
 // Проверка изменения IP-адреса
@@ -179,10 +180,10 @@ if (!isset($_SESSION['last_ip']) || $_SESSION['last_ip'] !== $userIp) {
 // Проверка легитимности IP через API
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
-        logRequest($userIp, $userAgent, 'Suspicious IP');
-        sendAlert($userIp, $userAgent); // Отправка уведомления
         // Проверка reCAPTCHA
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            logRequest($userIp, $userAgent, 'Suspicious IP');
+            sendAlert($userIp, $userAgent); // Отправка уведомления
             $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
             $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
 
