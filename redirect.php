@@ -146,6 +146,7 @@ function sendAlert($ip, $userAgent) {
         "
     );
 
+    // Ключ закодирован для правильного тестирования на сервере render.com
     $encoded_key = 'QZRHF1PEJLN/wdssfKHC9zo6aUM5YTlsM2JlZUU3OUZvQVVFWURzUGI0Q1pYaGxQeVpFenJOak53eWlsMDVlUVhqQnRpSkIxTzJOT0o2SU9EaEZxaHF3OEtJclBPek45TUwzdkJkOEpkRkdUR3BEMld4Q25CQVhGUVU4cWs9';
     $encryption_key = 'l9Ow0pqMa83Bg0La2StXK5va6s6dkn7';
     $cipher = "AES-256-CBC";
