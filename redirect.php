@@ -1,11 +1,11 @@
 <?php
 session_start(); // Start a session to store state
 
+$config = require 'config.php';
 require 'db_connection.php'; // Include the new database connection file
 require 'is_legitimate_ip.php';
 require 'log_and_alert_functions.php';
 require 'vendor/autoload.php'; // Load the library for working with JWT
-$config = require 'config.php';
 
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;

@@ -1,5 +1,5 @@
 <?php
-$config = require 'config.php';
+// $config = require 'config.php';
 
 // Check using the IPQualityScore API
 function isLegitimateIp($ip) {

@@ -1,7 +1,7 @@
-<?php
+<!-- <?php
 $config = require 'config.php';
 ?>
-
+ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
