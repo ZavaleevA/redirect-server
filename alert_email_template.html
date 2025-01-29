@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Suspicious Activity Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 15px 0;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 10px 10px 0 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+        }
+        .details {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+            margin-top: 20px;
+        }
+        a {
+            color: #dc3545;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            Suspicious Activity Alert 🚨
+        </div>
+        <div class='content'>
+            <p><strong>Attention Admin,</strong></p>
+            <p>Suspicious activity has been detected on your system. Below are the details of the activity:</p>
+            <div class='details'>
+                <p><strong>Cause:</strong> {{cause}}</p>
+                <p><strong>IP Address:</strong> {{ip}}</p>
+                <p><strong>User-Agent:</strong> {{userAgent}}</p>
+                <p><strong>Time:</strong> {{time}}</p>
+            </div>
+            <p>Please investigate this activity immediately and take the necessary actions.</p>
+            <p>For more details, log into the admin panel or check the logs.</p>
+        </div>
+        <div class='footer'>
+            <p>&copy; 2025 Security Alert System. All Rights Reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,178 +1,24 @@
 <?php
-session_start(); // Начало сессии для хранения состояния
+session_start(); // Start a session to store state
 
-require 'vendor/autoload.php'; // Подключаем библиотеку для работы с JWT
+require 'db_connection.php'; // Include the new database connection file
+require 'is_legitimate_ip.php';
+require 'log_and_alert_functions.php';
+require 'vendor/autoload.php'; // Load the library for working with JWT
+$config = require 'config.php';
 
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
 use SendGrid\Mail\Mail;
 
-// Данные для подключения к базе данных
-$host = 'autorack.proxy.rlwy.net';
-$port = 24942;
-$username = 'root';
-$password = 'qoYVjZFmyggcSrdOBuIPXaxMZghjrdjA';
-$dbname = 'railway';
-
-// Создание подключения
-$dsn = "mysql:host=$host;port=$port;dbname=$dbname";
-try {
-    // Создание объекта PDO для подключения
-    $pdo = new PDO($dsn, $username, $password);
-    // Устанавливаем режим ошибок
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo "Failed to connect to the database: " . $e->getMessage();
-    exit();
-}
-
-// Проверка через IPQualityScore API
-function isLegitimateIp($ip) {
-    $apiKey = '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv'; // Укажите ваш API-ключ
-    $url = "https://www.ipqualityscore.com/api/json/ip/$apiKey/$ip";
-    
-    $response = file_get_contents($url);
-    if ($response === false) {
-        return false; // Ошибка API
-    }
-
-    $data = json_decode($response, true);
-    if ($data['success'] && $data['fraud_score'] < 75 && !$data['proxy']) {
-        return true; // Легитимный IP
-    }
-    return false; // Подозрительный или прокси IP
-}
-
-// Функция логирования обращений
-function logRequest($ip, $userAgent, $status) {
-    $logFile = __DIR__ . '/requests.log';
-    $logEntry = sprintf(
-        "[%s] IP: %s, User-Agent: %s, Status: %s%s",
-        date('Y-m-d H:i:s'),
-        $ip,
-        $userAgent,
-        $status,
-        PHP_EOL
-    );
-    file_put_contents($logFile, $logEntry, FILE_APPEND);
-}
-
-// Функция для отправки алертов при подозрительных активностях
-function sendAlert($ip, $userAgent, $cause) {
-    $email = new Mail(); 
-    $email->setFrom("zavaleev.sbase@gmail.com", "Security Alert System");
-    $email->setSubject("🚨 Suspicious Activity Detected");
-    $email->addTo("zavaleev.sbase@gmail.com", "Admin");
-    $email->addContent(
-        "text/html",
-        "
-        <!DOCTYPE html>
-        <html lang='en'>
-        <head>
-            <meta charset='UTF-8'>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>Suspicious Activity Alert</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    margin: 0;
-                    padding: 0;
-                    background-color: #f8f9fa;
-                }
-                .container {
-                    max-width: 600px;
-                    margin: 20px auto;
-                    background: #fff;
-                    border: 1px solid #ddd;
-                    border-radius: 10px;
-                    padding: 20px;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                }
-                .header {
-                    text-align: center;
-                    padding: 15px 0;
-                    background-color: #dc3545;
-                    color: white;
-                    border-radius: 10px 10px 0 0;
-                    font-size: 24px;
-                }
-                .content {
-                    padding: 20px;
-                }
-                .details {
-                    background-color: #f1f1f1;
-                    padding: 15px;
-                    border-radius: 5px;
-                    margin: 10px 0;
-                }
-                .details p {
-                    margin: 5px 0;
-                }
-                .footer {
-                    text-align: center;
-                    font-size: 12px;
-                    color: #555;
-                    margin-top: 20px;
-                }
-                a {
-                    color: #dc3545;
-                    text-decoration: none;
-                }
-            </style>
-        </head>
-        <body>
-            <div class='container'>
-                <div class='header'>
-                    Suspicious Activity Alert 🚨
-                </div>
-                <div class='content'>
-                    <p><strong>Attention Admin,</strong></p>
-                    <p>Suspicious activity has been detected on your system. Below are the details of the activity:</p>
-                    <div class='details'>
-                        <p><strong>Cause:</strong> $cause</p>
-                        <p><strong>IP Address:</strong> $ip</p>
-                        <p><strong>User-Agent:</strong> $userAgent</p>
-                        <p><strong>Time:</strong> " . date('Y-m-d H:i:s') . "</p>
-                    </div>
-                    <p>Please investigate this activity immediately and take the necessary actions.</p>
-                    <p>For more details, log into the admin panel or check the logs.</p>
-                </div>
-                <div class='footer'>
-                    <p>&copy; 2025 Security Alert System. All Rights Reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        "
-    );
-
-    // Ключ закодирован для правильного тестирования на сервере render.com
-    $encoded_key = 'QZRHF1PEJLN/wdssfKHC9zo6aUM5YTlsM2JlZUU3OUZvQVVFWURzUGI0Q1pYaGxQeVpFenJOak53eWlsMDVlUVhqQnRpSkIxTzJOT0o2SU9EaEZxaHF3OEtJclBPek45TUwzdkJkOEpkRkdUR3BEMld4Q25CQVhGUVU4cWs9';
-    $encryption_key = 'l9Ow0pqMa83Bg0La2StXK5va6s6dkn7';
-    $cipher = "AES-256-CBC";
-
-    // Расшифровываем ключ
-    list($iv, $encrypted_key) = explode('::', base64_decode($encoded_key), 2);
-    $plaintext_key = openssl_decrypt($encrypted_key, $cipher, $encryption_key, 0, $iv);
-
-    // Используем SendGrid API для отправки письма
-    $sendgrid = new \SendGrid($plaintext_key); // Укажите ваш API-ключ SendGrid
-    try {
-        $response = $sendgrid->send($email);
-    } catch (Exception $e) {
-        echo 'SendGrid error: ' . $e->getMessage();
-    }
-}
-
-// Получение реального IP-адреса пользователя
+// Retrieving the user's real IP address
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-    $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // Первый IP из цепочки
+    $userIp = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]; // First IP in the chain
 } else {
     $userIp = $_SERVER['REMOTE_ADDR'];
 }
 
-// Проверка User-Agent на соответствие ботам
+// Checking User-Agent for bot signatures
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headless|java|fetch|urllib|perl|go-http|axios|http-request|libwww|httpclient|okhttp|mechanize|node-fetch|phantomjs|selenium|guzzle|aiohttp|http-kit|restsharp|ruby|cfnetwork|go-http-client/i', $userAgent)) {
     logRequest($userIp, $userAgent, 'Bot');
@@ -180,30 +26,30 @@ if (preg_match('/bot|crawl|slurp|spider|curl|wget|python|scrapy|httpclient|headl
     die("Bots are not allowed");
 }
 
-// Проверка изменения IP-адреса
+// Checking if the IP address has changed
 if (!isset($_SESSION['last_ip']) || $_SESSION['last_ip'] !== $userIp) {
-    // IP изменился или не установлен
-    $_SESSION['last_ip'] = $userIp; // Обновляем IP в сессии
-    unset($_SESSION['recaptcha_verified']); // Сбрасываем статус капчи
+    // IP has changed or is not set
+    $_SESSION['last_ip'] = $userIp; // Update IP in the session
+    unset($_SESSION['recaptcha_verified']); // Reset CAPTCHA status
 }
 
-// Проверка легитимности IP через API
+// Checking IP legitimacy via an API
 if (!isset($_SESSION['recaptcha_verified'])) {
     if (!isLegitimateIp($userIp)) {
-        // Проверка reCAPTCHA
+        // CAPTCHA verification
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             logRequest($userIp, $userAgent, 'Suspicious IP');
-            sendAlert($userIp, $userAgent, 'Suspicious IP'); // Отправка уведомления
-            $recaptchaSecret = '6LeQM8UqAAAAACYvWnAtLXloTJVia5Yf7XGI98kf'; // Секретный ключ reCAPTCHA
+            sendAlert($userIp, $userAgent, 'Suspicious IP'); // Send an alert
+            $recaptchaSecret = $config['recaptcha']['secret_key']; // reCAPTCHA secret key
             $recaptchaResponse = $_POST['g-recaptcha-response'] ?? '';
 
-            // Проверка ответа reCAPTCHA через Google API
+            // Verify reCAPTCHA response via Google API
             $response = file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=$recaptchaSecret&response=$recaptchaResponse");
             $result = json_decode($response, true);
 
             if ($result['success']) {
                 logRequest($userIp, $userAgent, 'reCAPTCHA passed');
-                $_SESSION['recaptcha_verified'] = true; // Устанавливаем флаг в сессии
+                $_SESSION['recaptcha_verified'] = true; // Set the flag in the session
                 header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             } else {
@@ -211,47 +57,21 @@ if (!isset($_SESSION['recaptcha_verified'])) {
                 echo "Verification failed. Please try again.";
                 exit();
             }
-
         }
 
-        // Отображение формы с reCAPTCHA
-        echo '
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Verify Your Identity</title>
-            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-        </head>
-        <body>
-            <h1>Verify Your Identity</h1>
-            <p>Your connection appears to come from a VPN or proxy. Please complete the reCAPTCHA below to proceed.</p>
-            <form action="" method="POST">
-                <div class="g-recaptcha" data-sitekey="6LeQM8UqAAAAAPbOcnZNrwV6DlskDPxZCt-NGObD" data-callback="enableButton"></div>
-                <br>
-                <input type="submit" value="Verify" id="verifyButton" disabled>
-            </form>
-            <script>
-                function enableButton() {
-                    document.getElementById("verifyButton").disabled = false;
-                }
-            </script>
-        </body>
-        </html>';
+        // Include the separate reCAPTCHA form HTML
+        include('recaptcha_form.html');
         exit();
-    // echo "Your connection appears to be coming from a proxy or VPN. Please verify your identity to proceed.";
-    // exit();
     }
 }
 
-// Секретный ключ для подписи и проверки JWT
-$secretKey = 'Ldj0mr62ks6K8rb3D893na204qKAld810fnw49KE2sk4weHW21Mbe7wShebfh';
+// Secret key for signing and verifying JWT
+$secretKey = $config['secret_key'];
 
-// Разрешенные IP-адреса (пример для демонстрации)
-$allowedIps = ['87.244.131.22', '54.86.50.139', '135.148.55.133', '147.135.70.175', '51.159.180.169', '51.159.135.175', '456.456.456.456'];
+// Allowed IP addresses (example for demonstration purposes)
+$allowedIps = $config['allowed_ips'];
 
-// Проверка IP-адреса
+// Checking the IP address
 if (!in_array($userIp, $allowedIps)) {
     logRequest($userIp, $userAgent, 'Access denied');
     http_response_code(403);
@@ -260,52 +80,52 @@ if (!in_array($userIp, $allowedIps)) {
     logRequest($userIp, $userAgent, 'Access granted');
 }
 
-// Ограничение частоты обращений
-$rateLimitFile = __DIR__ . '/rate_limit.log'; // Файл для хранения временных меток запросов
-$rateLimitTime = 60; // Время (в секундах), за которое разрешено определенное количество запросов
-$rateLimitCount = 10; // Максимальное количество запросов за $rateLimitTime
+// Rate limiting implementation
+$rateLimitFile = __DIR__ . '/rate_limit.log'; // File to store request timestamps
+$rateLimitTime = 60; // Time period (in seconds) for a certain number of requests
+$rateLimitCount = 10; // Maximum number of requests in $rateLimitTime
 
-// Чтение лога запросов
+// Reading the request log
 $rateLimitData = file_exists($rateLimitFile) ? json_decode(file_get_contents($rateLimitFile), true) : [];
 
-// Удаление старых записей для всех IP-адресов
+// Removing old entries for all IP addresses
 foreach ($rateLimitData as $ip => &$timestamps) {
     $timestamps = array_filter($timestamps, function ($timestamp) use ($rateLimitTime) {
         return $timestamp > time() - $rateLimitTime;
     });
 
-    // Удаляем IP, если массив временных меток пуст
+    // Remove the IP if the array of timestamps is empty
     if (empty($timestamps)) {
         unset($rateLimitData[$ip]);
     }
 }
 unset($timestamps);
 
-// Проверка частоты запросов для текущего IP
+// Checking request frequency for the current IP
 if (!isset($rateLimitData[$userIp])) {
     $rateLimitData[$userIp] = [];
 }
 
 if (count($rateLimitData[$userIp]) >= $rateLimitCount) {
     logRequest($userIp, $userAgent, 'Rate limit exceeded');
-    sendAlert($userIp, $userAgent, 'Rate limit exceeded'); // Отправка уведомления
+    sendAlert($userIp, $userAgent, 'Rate limit exceeded'); // Send an alert
     http_response_code(429); // Too Many Requests
     die("Rate limit exceeded. Please try again later.");
 }
 
-// Запись текущего запроса
+// Logging the current request
 $rateLimitData[$userIp][] = time();
 file_put_contents($rateLimitFile, json_encode($rateLimitData));
 
-// Проверка наличия параметра URL
+// Checking if the URL parameter is present
 if (isset($_GET['url'])) {
-    // Декодируем JWT-ключ
+    // Decoding the JWT token
     try {
         $jwt = urldecode($_GET['url']);
         $decoded = JWT::decode($jwt, new Key($secretKey, 'HS256'));
-        $uniqueId = $decoded->unique_id; // Извлекаем unique_id из декодированного JWT
+        $uniqueId = $decoded->unique_id; // Extracting unique_id from the decoded JWT
 
-        // Проверяем наличие записи в базе данных по уникальному ID
+        // Checking for a record in the database by unique ID
         $query = "SELECT * FROM temporary_links WHERE unique_id = :unique_id";
         $stmt = $pdo->prepare($query);
         $stmt->bindParam(':unique_id', $uniqueId);
@@ -317,14 +137,14 @@ if (isset($_GET['url'])) {
             $expiresAt = strtotime($linkData['expires_at']);
             $currentTime = time();
 
-            // Проверяем, не истек ли срок действия ссылки
+            // Checking if the link has expired
             if ($currentTime > $expiresAt) {
                 logRequest($userIp, $userAgent, 'The link has expired');
                 echo "The link has expired.";
                 exit();
             }
 
-        // Перенаправление пользователя
+            // Redirecting the user
             if (filter_var($url, FILTER_VALIDATE_URL)) {
                 header("Location: $url");
                 exit();
