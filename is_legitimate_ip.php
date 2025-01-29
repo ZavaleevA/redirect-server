@@ -4,7 +4,8 @@ function isLegitimateIp($ip) {
     $config = require 'config.php';
     $apiKey = $config['ipqualityscore']; // Specify your API key
     $url = "https://www.ipqualityscore.com/api/json/ip/$apiKey/$ip";
-    
+    echo $url;
+    exit();
     $response = file_get_contents($url);
     if ($response === false) {
         return false; // API error
