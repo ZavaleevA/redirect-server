@@ -1,4 +1,6 @@
 <?php
+use SendGrid\Mail\Mail;
+
 // Function to log requests
 function logRequest($ip, $userAgent, $status) {
     $logFile = __DIR__ . '/requests.log';

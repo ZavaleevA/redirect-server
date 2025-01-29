@@ -9,7 +9,6 @@ require 'vendor/autoload.php'; // Load the library for working with JWT
 
 use \Firebase\JWT\JWT;
 use \Firebase\JWT\Key;
-use SendGrid\Mail\Mail;
 
 // Retrieving the user's real IP address
 if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
