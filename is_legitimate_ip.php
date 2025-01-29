@@ -11,9 +11,9 @@ function isLegitimateIp($ip) {
     }
 
     $data = json_decode($response, true);
-    echo $data;
+    echo '1:' . $data['success'] . ' 2:' . $data['fraud_score'] . ' 3:' . $data['proxy'] . ' 4:' . $data['vpn'];
     exit();
-    if ($data['success'] && $data['fraud_score'] < 75 && !$data['proxy']) {
+    if ($data['success'] && $data['fraud_score'] < 75 && !$data['proxy'] && !$data['vpn']) {
         return true; // Legitimate IP
     }
     return false; // Suspicious or proxy IP
