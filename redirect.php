@@ -60,7 +60,7 @@ if (!isset($_SESSION['recaptcha_verified'])) {
         }
 
         // Include the separate reCAPTCHA form HTML
-        include('recaptcha_form.html');
+        include('recaptcha_form.php');
         exit();
     }
 }
