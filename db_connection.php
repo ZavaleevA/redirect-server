@@ -1,6 +1,6 @@
 <?php
 // Load the configuration file
-// $config = require 'config.php';
+$config = require 'config.php';
 
 // Database connection details
 $host = $config['db']['host'];
@@ -20,4 +20,3 @@ try {
     echo "Failed to connect to the database: " . $e->getMessage();
     exit();
 }
-?>

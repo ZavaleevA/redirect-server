@@ -30,4 +30,3 @@ return [
     ],
     'ipqualityscore' => '4xf4Fuv7vE80ZAWeaITrCoUaBPIGQYRv',
 ];
-?>

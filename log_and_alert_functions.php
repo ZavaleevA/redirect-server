@@ -1,5 +1,5 @@
 <?php
-// $config = require 'config.php';
+$config = require 'config.php';
 
 // Function to log requests
 function logRequest($ip, $userAgent, $status) {
@@ -50,4 +50,3 @@ function sendAlert($ip, $userAgent, $cause) {
         echo 'SendGrid error: ' . $e->getMessage();
     }
 }
-?>
