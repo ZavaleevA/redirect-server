@@ -1,6 +1,4 @@
 <?php
-$config = require 'config.php';
-
 // Function to log requests
 function logRequest($ip, $userAgent, $status) {
     $logFile = __DIR__ . '/requests.log';
@@ -17,6 +15,7 @@ function logRequest($ip, $userAgent, $status) {
 
 // Function to send alerts for suspicious activities
 function sendAlert($ip, $userAgent, $cause) {
+    $config = require 'config.php';
     // Loading the HTML template
     $htmlTemplate = file_get_contents('alert_email_template.html');
 
